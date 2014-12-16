@@ -52,10 +52,10 @@ func (t NodeType) Type() NodeType {
 }
 
 const (
-	NodeText       NodeType = iota // Plain text.
-	NodeNL                        // NL are evaluated separately
-	NodeCR			    // CRs need to be handled too
-	NodeSpace                     // Space..we classify that differently
+	NodeText  NodeType = iota // Plain text.
+	NodeNL                    // NL are evaluated separately
+	NodeCR                    // CRs need to be handled too
+	NodeSpace                 // Space..we classify that differently
 	NodeComment
 	NodeEscaped
 	NodeUnescaped
@@ -63,9 +63,9 @@ const (
 	NodeInverted
 	NodePartial
 	NodeParent
-	NodeList			// A list of nodes
-	NodePipe                       // A pipeline of commands.
-	NodeTemplate                   // A template invocation action.
+	NodeList     // A list of nodes
+	NodePipe     // A pipeline of commands.
+	NodeTemplate // A template invocation action.
 	NodeIdentifier
 	NodeCommand
 	NodeVariable
@@ -75,7 +75,7 @@ const (
 	NodeElse
 	NodeRange
 	NodeWith
-	NodeAction                     // A non-control action such as a field evaluation.
+	NodeAction // A non-control action such as a field evaluation.
 	NodeChain
 	NodeField
 	NodeDot
@@ -84,40 +84,72 @@ const (
 
 // NodeStrings gives a string description for the NodeType
 var NodeStrings map[NodeType]string
-var ItemToNode map[itemType]NodeType   // itemTypes to NodeTypes (for ident declarations)
+var ItemToNode map[itemType]NodeType // itemTypes to NodeTypes (for ident declarations)
+
+func (n NodeType) String() string {
+	switch n {
+	case NodeText:
+		return "NodeText"
+	case NodeNL:
+		return "NodeNL"
+	case NodeCR:
+		return "NodeCR"
+	case NodeSpace:
+		return "NodeSpace"
+	case NodeComment:
+		return "NodeComment"
+	case NodeEscaped:
+		return "NodeEscaped"
+	case NodeUnescaped:
+		return "NodeUnescaped"
+	case NodeSection:
+		return "NodeSection"
+	case NodeInverted:
+		return "NodeInverted"
+	case NodePartial:
+		return "NodePartial"
+	case NodeParent:
+		return "NodeParent"
+	case NodeList:
+		return "NodeList"
+	case NodePipe:
+		return "NodePipe"
+	case NodeTemplate:
+		return "NodeTemplate"
+	case NodeIdentifier:
+		return "NodeIdentifier"
+	case NodeCommand:
+		return "NodeCommand"
+	case NodeVariable:
+		return "NodeVariable"
+	case NodeCTag:
+		return "NodeCTag"
+	case NodeBranch:
+		return "NodeBranch"
+	case NodeIf:
+		return "NodeIf"
+	case NodeRange:
+		return "NodeRange"
+	case NodeWith:
+		return "NodeWith"
+	case NodeChain:
+		return "NodeChain"
+	case NodeField:
+		return "NodeField"
+	case NodeDot:
+		return "NodeDot"
+	case NodeEnd:
+		return "NodeEnd"
+	}
+	return "unknown"
+}
 
 func init() {
-	NodeStrings = make(map[NodeType]string)
-	NodeStrings[NodeText] = "NodeText"
-	NodeStrings[NodeNL] = "NodeNL"
-	NodeStrings[NodeCR] = "NodeCR"
-	NodeStrings[NodeSpace] = "NodeSpace"
-	NodeStrings[NodeComment] = "NodeComment"
-	NodeStrings[NodeEscaped] = "NodeEscaped"
-	NodeStrings[NodeUnescaped] = "NodeUnescaped"
-	NodeStrings[NodeSection] = "NodeSection"
-	NodeStrings[NodeInverted] = "NodeInverted"
-	NodeStrings[NodePartial] = "NodePartial"
-	NodeStrings[NodeParent] = "NodeParent"
-	NodeStrings[NodeList] = "NodeList"
-	NodeStrings[NodePipe] = "NodePipe"
-	NodeStrings[NodeTemplate] = "NodeTemplate"
-	NodeStrings[NodeIdentifier] = "NodeIdentifier"
-	NodeStrings[NodeCommand] = "NodeCommand"
-	NodeStrings[NodeVariable] = "NodeVariable"
-	NodeStrings[NodeCTag] = "NodeCTag"
-	NodeStrings[NodeBranch] = "NodeBranch"
-	NodeStrings[NodeIf] = "NodeIf"
-	NodeStrings[NodeRange] = "NodeRange"
-	NodeStrings[NodeWith] = "NodeWith"
-	NodeStrings[NodeChain] = "NodeChain"
-	NodeStrings[NodeField] = "NodeField"	
-	NodeStrings[NodeDot] = "NodeDot"	
-	NodeStrings[NodeEnd] = "NodeEnd"
 	ItemToNode = make(map[itemType]NodeType)
 	ItemToNode[identUnescaped] = NodeUnescaped
 	ItemToNode[identEscaped] = NodeEscaped
 }
+
 // Nodes.
 
 // TextNode holds plain text.
@@ -126,7 +158,6 @@ type TextNode struct {
 	Pos
 	Text []byte // The text; may span newlines.
 }
-
 
 func newText(pos Pos, text string) *TextNode {
 	return &TextNode{NodeType: NodeText, Pos: pos, Text: []byte(text)}
@@ -221,8 +252,8 @@ type CommentNode struct {
 	NodeType
 	TagType itemType
 	Pos
-//	Width int
-	Line	int
+	//	Width int
+	Line int
 	Pipe *PipeNode
 }
 
@@ -231,7 +262,7 @@ func newComment(pos Pos, line int, pipe *PipeNode) *CommentNode {
 }
 
 func (t *CommentNode) String() string {
-	return  fmt.Sprintf("{{%s}}", t.Pipe)
+	return fmt.Sprintf("{{%s}}", t.Pipe)
 }
 
 func (t *CommentNode) Copy() Node {
@@ -407,6 +438,7 @@ func (l *ListNode) CopyList() *ListNode {
 func (l *ListNode) Copy() Node {
 	return l.CopyList()
 }
+
 // ActionNode holds an action (something bounded by delimiters).
 // Control actions have their own nodes; ActionNode represents simple
 // ones such as field evaluations and parenthesized pipelines.
@@ -436,9 +468,9 @@ func (a *ActionNode) Copy() Node {
 type PipeNode struct {
 	NodeType
 	Pos
-	Line int             // The line number in the input (deprecated; kept for compatibility)
+	Line int // The line number in the input (deprecated; kept for compatibility)
 	Decl []*VariableNode
-	Cmds []*CommandNode  // The commands in lexical order.
+	Cmds []*CommandNode // The commands in lexical order.
 }
 
 func newPipeline(pos Pos, line int, decl []*VariableNode) *PipeNode {
@@ -511,7 +543,6 @@ func (t *TemplateNode) String() string {
 func (t *TemplateNode) Copy() Node {
 	return newTemplate(t.Pos, t.Line, t.Name, t.Pipe.CopyPipe())
 }
-
 
 // IdentifierNode holds an identifier.
 type IdentifierNode struct {
@@ -655,6 +686,7 @@ func (e *elseNode) String() string {
 func (e *elseNode) Copy() Node {
 	return newElse(e.Pos, e.Line)
 }
+
 // IfNode represents an {{if}} action and its commands.
 type IfNode struct {
 	BranchNode
@@ -787,5 +819,3 @@ func (t *TagNode) Copy() Node {
 
 
 */
-
-

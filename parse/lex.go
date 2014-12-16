@@ -43,14 +43,13 @@ const (
 	// Special items
 	ERROR itemType = iota
 	EOF
-	itemText  // main
-	itemSpace // 1 or more spaces
-	itemTag   // {{ }}
-	itemNL    // \n
-	itemCR    // \r
-	itemCRLF  // \r\n
-	itemIdentifier // 
-	itemDiscard  // stuff that gets discarded
+	itemText       // main
+	itemSpace      // 1 or more spaces
+	itemTag        // {{ }}
+	itemNL         // \n
+	itemCR         // \r
+	itemIdentifier //
+	itemDiscard    // stuff that gets discarded
 
 	itemOTag // {{
 	itemCTag // }}
@@ -60,23 +59,22 @@ const (
 	tagUnescaped  // { : {{{ variable}}
 	tagUnescaped2 // & : {{& variable}}
 	// section tags
-	tagSection         // # : {{#section}}
-	tagInverted        // ^ : {{^section}}
-	tagEndSection      // / : {{/section}}
-	tagComment         //! : {{!comment}}
-	tagPartial // < : {{<partial
-	tagParent  // > : {{>partial
+	tagSection    // # : {{#section}}
+	tagInverted   // ^ : {{^section}}
+	tagEndSection // / : {{/section}}
+	tagComment    //! : {{!comment}}
+	tagPartial    // > : {{>partial
 	tagΔDelimiter // = : {{=| |=}} : | is the new oTag and cTag
 
 	identEscaped
 	identUnescaped
 
-	markerDot     // . : {{.}}
-	markerIndex   // -index : {{-index}}
-	markerFirst   // #-first : {{#-first}} {{/first}}
-	markerLast    // /-last : {{#-first}} {{/first}}
-	markerOdd     // #-odd : {{#-odd}} {{/-odd}}
-	markerText    // " : {{"sometext}}
+	markerDot   // . : {{.}}
+	markerIndex // -index : {{-index}}
+	markerFirst // #-first : {{#-first}} {{/first}}
+	markerLast  // /-last : {{#-first}} {{/first}}
+	markerOdd   // #-odd : {{#-odd}} {{/-odd}}
+	markerText  // " : {{"sometext}}
 
 	//residual stuff should be replaced with correct itemType from above
 	itemEnd
@@ -94,42 +92,40 @@ const (
 	CRune = '}'
 )
 
-var 	itemEmpty item
+var itemEmpty item
 
 // itemStrings provides string descriptions to the item.
 var ItemStrings = [...]string{
-	ERROR:              "ERROR",
-	EOF:                "EOF",
-	itemText:           "text",
-	itemSpace:          "space",
-	itemTag:            "tag",
-	itemNL:             "nl",
-	itemCR:             "cr",
-	itemCRLF:           "crlf",
-//	itemChar:           "char",
-//	itemNil:            "nil",
-	itemIdentifier:     "identifier",
-	itemDiscard:        "discard",
-	itemOTag:           "otag",
-	itemCTag:           "ctag",
-	tagEscaped:         "escapedVarTag",
-	tagUnescaped:       "unescapedVarTag",
-	tagUnescaped2:      "unescapedVarTag2",
-	tagSection:         "sectionTag",
-	tagInverted:        "invertedTag",
-	tagEndSection:      "endSectionTag",
-	tagComment:         "commentTag",
-	tagPartial:      "partialTag",
-	tagParent:       "parentTag",
-	tagΔDelimiter: "ΔDelimiterTag",
-	identEscaped: "escapedVar",
+	ERROR:     "ERROR",
+	EOF:       "EOF",
+	itemText:  "text",
+	itemSpace: "space",
+	itemTag:   "tag",
+	itemNL:    "nl",
+	itemCR:    "cr",
+	//	itemChar:           "char",
+	//	itemNil:            "nil",
+	itemIdentifier: "identifier",
+	itemDiscard:    "discard",
+	itemOTag:       "otag",
+	itemCTag:       "ctag",
+	tagEscaped:     "escapedVarTag",
+	tagUnescaped:   "unescapedVarTag",
+	tagUnescaped2:  "unescapedVarTag2",
+	tagSection:     "sectionTag",
+	tagInverted:    "invertedTag",
+	tagEndSection:  "endSectionTag",
+	tagComment:     "commentTag",
+	tagPartial:     "partialTag",
+	tagΔDelimiter:  "ΔDelimiterTag",
+	identEscaped:   "escapedVar",
 	identUnescaped: "unescapedVar",
-	markerDot:          "markerDot",
-	markerIndex:        "markerIndex",
-	markerFirst:        "markerFirst",
-	markerLast:         "markerLast",
-	markerOdd:          "markerOdd",
-	markerText:         "markerText",
+	markerDot:      "markerDot",
+	markerIndex:    "markerIndex",
+	markerFirst:    "markerFirst",
+	markerLast:     "markerLast",
+	markerOdd:      "markerOdd",
+	markerText:     "markerText",
 }
 
 const eof = -1
@@ -143,10 +139,10 @@ type lexer struct {
 
 	// tag information, each lexer has their own because Mustache templates
 	// can modify tags.
-	oTag  string // open tag
-	oLen  int
-	cTag  string // close tag info
-	cLen  int
+	oTag string // open tag
+	oLen int
+	cTag string // close tag info
+	cLen int
 
 	state       stateFn   // the next lexing function to enter
 	pos         Pos       // current position in the input
@@ -277,49 +273,46 @@ func (l *lexer) run() {
 // are encountered.
 // When a non stack-adding item is encountered, the stack will
 // be reset, unless the next items accumulate into a comment.
-// At which point the stack will be evaluated. 
+// At which point the stack will be evaluated.
 // Stacks are reset at the end of each comment.
 
 // lexText checks for the basic block types and has them handled.
 func lexText(l *lexer) stateFn {
 	for {
 		c, _ := l.current()
-		// check for tag
-		logger.Debugf("OTag: %s\tcurrent: %c\n", l.oTag, c)
-		if strings.HasPrefix(l.input[l.start:], l.oTag) {
-			logger.Debug("has oTag\n")
+		if strings.HasPrefix(l.input[l.pos:], l.oTag) {
 			if l.pos > l.start {
 				l.emit(itemText)
 			}
 			return lexOTag // Next state.
-		}	
+		}
 		// if a CRLF occurs, this sequential processing will handle it.
-		if isCR(c) {   // \r are handled separately
+		if isCR(c) { // \r are handled separately
 			if l.pos > l.start {
 				l.emit(itemText)
 			}
 			return lexCR(l)
-		}	
-		if isNL(c) {  	// \n are handled separately
+		}
+		if isNL(c) { // \n are handled separately
 			if l.pos > l.start {
 				l.emit(itemText)
 			}
 			return lexNL(l)
 		}
-		if isSpace(c) {  // spaces are separate because of standalone comments
+		if isSpace(c) { // spaces are separate because of standalone comments
 			if l.pos > l.start {
 				l.emit(itemText)
 			}
 			return lexSpace(l)
 		}
-/* TODO proper dot handling
+		/* TODO proper dot handling
 		if c == '.' {
 			if l.pos > l.start {
 				l.emit(itemText)
 			}
 			return lexDot(l)
 		}
-*/
+		*/
 		if l.next() == eof {
 			break
 		}
@@ -338,7 +331,6 @@ func lexOTag(l *lexer) stateFn {
 	// move pointer to next pos beyond oTag to see what kind it is
 	l.pos += Pos(l.oLen)
 	r := l.next()
-	logger.Debugf("lexOTag: %c\n", r)
 	switch r {
 	case '!': // comment
 		// comments get elided so we don't emit anything
@@ -358,12 +350,10 @@ func lexOTag(l *lexer) stateFn {
 		return lexSection
 	case '>': // partial
 		l.emit(tagPartial)
-		//		l.parentDepth = 0
 		return lexPartial
 	case '=': // delimiter change
 		l.emit(tagΔDelimiter)
 		return lexΔDelimiter
-		//		return tagDelimiter
 	}
 
 	// default is escaped varialble: {{variable}}
@@ -411,7 +401,7 @@ func lexEscaped(l *lexer) stateFn {
 	}
 	l.pos += Pos(i)
 	l.emit(identEscaped)
-	return lexCTag	
+	return lexCTag
 }
 
 // lexUnescaped handles unescaped variable lexing. This only creates a token,
@@ -427,53 +417,61 @@ func lexUnescaped(l *lexer) stateFn {
 	l.pos += Pos(i)
 	l.emit(identUnescaped)
 	// see if there is a }}}, elide the first if there is
-	if strings.HasPrefix(l.input[l.pos:], "}" + l.cTag) {
+	if strings.HasPrefix(l.input[l.pos:], "}"+l.cTag) {
 		l.pos += Pos(1)
 		l.start = l.pos
-		logger.Info("Escaped pose elide: %s", l.input[l.pos:])
 	}
-	return lexCTag	
+	return lexCTag
 }
 
 // lexΔDelimiter handles the update of current oTag and cTag info
 // with the new delimiter, e.g. {{=| |=}} {{=%% %%=}} {{= | | =}}
 // TODO clean this up with some sane code
 func lexΔDelimiter(l *lexer) stateFn {
-	i := strings.Index(l.input[l.pos:], l.cTag)
-	if i < 0 {
-		return l.errorf("unclosed delimiter tag")
+	// cache cTag info because it will be replace during the course of execution
+	origCTagPos := strings.Index(l.input[l.pos:], l.cTag)
+	if origCTagPos < 0 {
+		return l.errorf("rollie: unclosed delimiter tag")
 	}
-	// point i to the cTag for future use
-	i += int(l.pos)
+	origCTagPos += int(l.pos)
 	cLenOrig := l.cLen
-	l.ignore()
-	pos := findNextWhitespace(l)
+	// skip any spaces between = and Otag
+	pos := skipWhitespace(l)
 	if pos < 0 {
-		return l.errorf("unable to find end of new delimiter, check that there is a space following it")
+		return l.errorf("rollie: unexpected EOF encountered while changing delimiters")
 	}
-	// Extract the new delimiter
-	logger.Debugf("Δ: %d %d %q\n", l.start, l.pos, l.input[(l.start-1):pos])
-	l.oTag = strings.TrimSpace(l.input[l.start:pos-1])
+	endPos := nextWhitespace(l)
+	if endPos < 0 {
+		return l.errorf("rollie: unable to find end of new delimiter, check that there is a space following it")
+	}
+	// Extract the new otag
+	l.oTag = strings.TrimSpace(l.input[pos:endPos])
 	l.oLen = len(l.oTag)
-	l.start = l.pos
-	// skip the whitespace that may separated delims
+	l.start = Pos(endPos)
+	l.pos = Pos(endPos)
+
+	//	nxt := l.next() // skip the =
+	// skip the whitespace that separates delims
 	_ = skipWhitespace(l)
 	l.cTag = ""
-	// get everything before the end delim 
+	// get everything before the end delim
 	for l.peek() != '=' {
 		r := l.next()
 		if r == ' ' {
 			continue
 		}
-		logger.Debugf("peek %q\n", r)
+
 		l.cTag += string(r)
 	}
 	l.cLen = len(l.cTag)
-	logger.Debugf("new ctag: %s %d\n", l.cTag, l.cLen)
-	// parse the original cTag
 	skipWhitespace(l)
-	l.pos = l.pos + Pos(cLenOrig)
-	logger.Debugf("current post pre CTag emit: %d %d %q\n", int(l.start), int(l.pos), l.input[l.start:l.pos])
+	// check for the second = sign since it should be there.
+	if l.peek() != '=' {
+		return l.errorf("rollie: expected '=' got %q while trying to close a change delimiter tag", l.peek())
+	}
+	// skip to the original cTag
+	l.start = Pos(origCTagPos)
+	l.pos = Pos(origCTagPos + cLenOrig)
 	l.emit(itemCTag)
 	return lexText
 }
@@ -489,7 +487,7 @@ func lexSection(l *lexer) stateFn {
 	return lexCTag
 }
 
-// lexPartial 
+// lexPartial
 func lexPartial(l *lexer) stateFn {
 	i := strings.Index(l.input[l.pos:], l.cTag)
 	switch true {
@@ -499,7 +497,7 @@ func lexPartial(l *lexer) stateFn {
 		return lexCTag
 	}
 	l.pos += Pos(i)
-	l.emit(tagPartial)
+	l.emit(itemIdentifier)
 	return lexCTag
 }
 
@@ -533,7 +531,7 @@ func lexNL(l *lexer) stateFn {
 	return lexText
 }
 
-func findNextWhitespace(l *lexer) int {
+func nextWhitespace(l *lexer) int {
 	pos := l.pos
 	var r rune
 	for {
@@ -554,11 +552,13 @@ func findNextWhitespace(l *lexer) int {
 func skipWhitespace(l *lexer) int {
 	var r rune
 	for {
-		r = l.next()
-		if !isSpace(r) {
-			l.ignore()
-			return int(l.pos)
+		r = l.peek()
+		if isSpace(r) {
+			l.next()
+			continue
 		}
+		l.ignore()
+		return int(l.pos)
 	}
 	// shouldn't get here
 	return -1
@@ -603,4 +603,3 @@ func Collect(name, src, left, right string) (items []item) {
 	}
 	return
 }
-
